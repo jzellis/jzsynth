@@ -1,1 +1,1 @@
-Simple synth using WebAudio and Web MIDI APIs. 
+Simple synth using WebAudio and Web MIDI APIs. Open in any browser, so long as it's Chrome, and either use the onscreen keyboard, your QWERTY keys, or -- I think -- any MIDI source.
