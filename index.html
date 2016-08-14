@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+
+	<script   src="https://code.jquery.com/jquery-3.1.0.min.js"   integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="   crossorigin="anonymous"></script>
+	<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src='qwerty-hancock.min.js'></script>
+
+<style>
+@import url(https://fonts.googleapis.com/css?family=VT323);
+
+body{
+	color: #aac;
+	background: black;
+}
+input[type=range][orient=vertical]
+{
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* WebKit */
+    width: 24px;
+    height: 100px;
+    padding: 0 5px;
+}
+
+.sliders{
+	font-size: 0.75em;
+}
+
+#display{
+	font-size: 2em;
+	color: green;
+	background-color: #030;
+	font-family: VT323, sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div class='container-fluid'>
+	<div class='row'>
+		<div class='col-md-2 col-md-offset-5 text-center' id='display'>
+			ready
+		</div>
+	</div>
+	<div class='row'>
+		<table class='table'>
+			<thead>
+				<tr>
+					<th class='col-md-1'></th><th class='col-md-1'>OSC</th><th class='col-md-2'>Detune</th><th class='col-md-1'>Cutoff</th><th class='col-md-1'>Res</th><th class='col-md-1'>A</th><th class='col-md-1'>D</th><th class='col-md-1'>S</th><th class='col-md-1'>R</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>1</td>
+					<td><select id='osc1'>
+						<option value='sin' selected='selected'>sin</option>
+							<option value='sqr'>sqr</option>
+								<option value='tri'>tri</option>
+									<option value='saw'>saw</option>
+									</select>
+					</td>
+					<td>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='cutoff1' value = '100' min='0' step = '1' max='100'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='res1' value = '0' min='0' step = '1' max='50'>
+					</td>	
+
+
+					<td>
+					<input type='range' orient="vertical" id='attack1' value = '0.01' min='0.01' step = '0.01' max='5'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='decay1' value = '5' min='0' step = '0.1' max='1'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='sustain1' value = '0.01' min='0.01' step='0.01' max='1'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='release1' value = '0.02' min='0.02'step = '0.01'  max='10'>
+					</td>
+	
+				</tr>
+				<tr>
+					<td>2</td>
+					<td><select id='osc2'>
+						<option value='sin' selected='selected'>sin</option>
+							<option value='sqr'>sqr</option>
+								<option value='tri'>tri</option>
+									<option value='saw'>saw</option>
+									</select>
+					</td>
+					<td>
+					<div class='col-md-6'>
+						<input type='range' orient="vertical" id='detune' value = '0' min='-1200' step= '100' max='1200'>
+					</div>
+					<div class='col-md-6'>
+						<input type='range' orient="vertical" id='detuneFine' value = '0' min='-100' step= '1' max='100'>
+					</div>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='cutoff2' value = '11000' min='0' step = '1' max='100'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='res2' value = '0' min='0' step = '1' max='50'>
+					</td>	
+
+	
+					<td>
+					<input type='range' orient="vertical" id='attack2' value = '0.01' min='0.01' step = '0.01' max='5'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='decay2' value = '5' min='0' step='0.1' max='1'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='sustain2' value = '0.01' min='0.01' step='0.01' max='1'>
+					</td>
+					<td>
+					<input type='range' orient="vertical" id='release2' value = '0.01' min='0.02' step = '0.02' max='10'>
+					</td>
+				</tr>
+			</tbody>
+
+		</table>
+	</div>
+
+</div>
+<div id='keyboard'></div>
+<script src='app.js'></script>
+
+	</body>
+</html>
