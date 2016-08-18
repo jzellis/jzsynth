@@ -11,6 +11,7 @@
         <script src='js/qwerty-hancock.min.js'></script>
         <script src='js/jquery.knob.min.js'></script>
         <script src='js/wavy-jones.js'></script>
+        <script src='settings.json'></script>
 
         <title>
             jzsynth
@@ -140,6 +141,25 @@
                     </tbody>
                 </table>
             </div>
+<div class='row'>
+	<table class='table'>
+		<thead>
+			<tr>
+				<th class='col-md-1'>LFO</th>
+				<th class='col-md-1'>Freq</th>
+				<th class='col-md-9'>Amount</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td></td>
+				<td><input class='knob' id='lfoFreq' value = '0' data-min='0' data-step = '.01' data-max='20'/></td>
+				<td><input class='knob' id='lfoAmount' value = '0' data-min='0' data-step = '.01' data-max='1000'/></td>
+
+</tr>
+</tbody></table>
+
+</div>
         </div>
         <div id='keyboard'>
         </div>
