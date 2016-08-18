@@ -20,3 +20,9 @@ background-repeat: no-repeat;
 	background-color: #030;
 	font-family: VT323, sans-serif;
 }
+
+#waveform1, #waveform2{
+	width: 400px;
+	height: 2.75em;
+	background-color: #030;
+}
