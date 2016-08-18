@@ -23,7 +23,7 @@
 };
 
 init = {
-	lfoFreq: 5.0,
+	lfoFreq: 0,
 	lfoAmount: 0,
 gain1: 1,
 osc1: 0,

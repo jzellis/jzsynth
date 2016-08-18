@@ -1,3 +1,61 @@
+if (navigator.requestMIDIAccess) {
+    navigator.requestMIDIAccess()
+        .then(success, failure);
+}
+
+function success (midi) {
+    var inputs = midi.inputs.values();
+    for (var input = inputs.next();
+     input && !input.done;
+     input = inputs.next()) {
+    // each time there is a midi message call the onMIDIMessage function
+    input.value.onmidimessage = onMIDIMessage;
+}
+}
+ 
+function failure () {
+    console.error('No access to your midi devices.')
+}
+
+function onMIDIMessage (message) {
+    console.log(message.data);
+        var frequency = midiNoteToFrequency(message.data[1]);
+
+
+        if (message.data[0] === 144 && message.data[2] > 0) {
+        	        var frequency = midiNoteToFrequency(message.data[1]);
+
+playNote(message.data[1],frequency);
+}
+
+if(message.data[0] === 224){
+	ccToSlider(message.data[2], "#cutoff1");
+}
+
+if(message.data[0] === 225){
+	ccToSlider(message.data[2], "#res1");
+}
+
+if (message.data[0] === 128 || message.data[0] === 144 && message.data[2] === 0) {
+stopNote(message.data[1]);
+}
+}
+
+function midiNoteToFrequency (note) {
+    return Math.pow(2, ((note - 69) / 12)) * 440;
+}
+
+function ccToSlider(ccVal, sliderId){
+
+slider = $(sliderId);
+sliderMin = slider.attr('min');
+sliderMax = slider.attr('max');
+slider.val(ccVal.map(0,127,sliderMin,sliderMax));
+slider.trigger('input');
+
+}
+
+
 var ctx = new AudioContext(),
 mainGain = ctx.createGain(),
 gain1 = ctx.createGain(),
