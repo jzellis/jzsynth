@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+	<script   src="https://code.jquery.com/jquery-3.1.0.min.js"   integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="   crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/lodash/4.15.0/lodash.min.js"></script>
+</head>
+<body>
+<input type='range' id='morph' value='0' min='0' max='100' step='0.01'>
+	<script>
+
+var presets = [
+[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0.64,0.02,0.1,0,0.9,0,0.09,0,0.07,0,0.06,0,0.05,0],
+[0.81,0,-0.09,0,0.03,0,-0.02,0,0.01,0,-0.01,0,0,0],
+[-0.32,-0.16,-0.11,-0.08,-0.06,-0.05,-0.05,-0.04,-0.04,-0.03,-0.03,-0.02,-0.02]
+],
+current = [],
+ctx = new AudioContext(),
+osc = ctx.createOscillator(),
+gain = ctx.createGain();
+
+$(document).ready(function(){
+startPreset = presets[0];
+wave = ctx.createPeriodicWave(new Float32Array(startPreset), new Float32Array(startPreset.length));
+osc.setPeriodicWave(wave);
+	osc.frequency.value = 220;
+	gain.gain.value = 0.5;
+	osc.connect(gain);
+	gain.connect(ctx.destination);
+
+	// osc.start();
+
+});
+
+
+$('#morph').on('input', function(e){
+
+	current = arrayMorph($(this).val(),$(this).attr('max'),presets);
+
+real = new Float32Array(current);
+imag = new Float32Array(current.length);
+osc.setPeriodicWave(ctx.createPeriodicWave(real,imag));
+
+
+})
+
+
+
+var arrayMorph = function(value, max, arrays) {
+    current = [];
+    //Get the number of arrays so we can divide the input value equally between them
+    numArrays = arrays.length;
+    // Get the current input value
+    // Get the input's max value
+    // Get the current input value as a spectrum between the values
+    absMorph = value / max * (numArrays - 1);
+    // This is the "hard" previous preset index
+    prev = Math.floor(absMorph);
+    // This is the "hard" next preset index
+    next = Math.ceil(absMorph);
+    // This is the decimal difference between the prev and next
+    diff = absMorph - prev;
+    prevArray = arrays[prev];
+    nextArray = presets[next];
+    nextArray.forEach(function(v, i, a) {
+        thisDiff = nextArray[i] - prevArray[i];
+        thisVal = prevArray[i] + (thisDiff * diff);
+        if (!isFinite(thisVal)) thisVal = 0;
+        current.push(thisVal);
+    });
+    return current;
+}
+</script>
+
+</body>
+</html>

@@ -4,16 +4,47 @@ gain2 = ctx.createGain(),
 filter1 = ctx.createBiquadFilter(),
 filter2 = ctx.createBiquadFilter(),
 delay = ctx.createDelay(),
+compressor = ctx.createDynamicsCompressor(),
+waveOsc1 = new WavyJones(ctx, 'waveform1'),
 active_voices1 = {},
 active_voices2 = {};
 
-var wfPresets =  {
-sqr: [0.64,0.02,0.1,0,0.9,0,0.09,0,0.07,0,0.06,0,0.05,0],
-sin: [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-tri: [0.81,0,-0.09,0,0.03,0,-0.02,0,0.01,0,-0.01,0,0,0],
-saw: [-0.32,-0.16,-0.11,-0.08,-0.06,-0.05,-0.05,-0.04,-0.04,-0.03,-0.03,-0.02,-0.02]
+waveOsc1.connect(ctx.destination);
+waveOsc1.lineColor = "#0f0";
+waveOsc1.lineThickness = 1;
 
+compressor.threshold.value= -0.3;
+compressor.knee.value = 40;
+compressor.connect(ctx.destination);
+
+var waveforms = {
+	sin: {
+		real: [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+		imag: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	},
+	tri: {
+		real: [0.81,0,-0.09,0,0.03,0,-0.02,0,0.01,0,-0.01,0,0,0],
+		imag: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	},
+	sqr: {
+		real: [0.64,0,0.21,0,0.13,0,0.09,0,0.07,0,0.06,0,0.05,0],
+		imag: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	},
+	saw: {
+		real: [-0.32,-0.16,-0.11,-0.08,-0.06,-0.05,-0.05,-0.04,-0.04,-0.03,-0.03,-0.02,-0.02],
+		imag: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	},
+	pulse: {
+		real: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+		imag: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	}
 };
+
+var wfPresets =  [];
+
+for(var key in waveforms){
+	wfPresets.push(waveforms[key].real);
+}
 
 var	keyboard = new QwertyHancock({
                  id: 'keyboard',
@@ -41,20 +72,23 @@ return Waveform;
 
 var Voice = (function(ctx){
 
-function Voice(frequency,wave,cutoff,q,detune,envelope){
+function Voice(gain,frequency,wave,cutoff,q,detune,envelope){
 	this.frequency = frequency;
 	this.oscillators = [];
 	this.gain = ctx.createGain();
+	this.realGain = ctx.createGain();
+	this.realGain.gain.value = gain || 1;
 	this.filter = ctx.createBiquadFilter();
 	this.cutoff = cutoff || 11000;
 	this.q = q || 0;
 	this.detune = detune || 0;
 	this.envelope = envelope || {a:0.15,d:1,s:1,r:0.02};
 	this.waveform = new Waveform();
+	this.waveform.real = new Float32Array(wave);
+	this.waveform.imag = new Float32Array(wave.length);
 };
 
 Voice.prototype.start = function(){
-		console.log(this.envelope);
 		var osc = ctx.createOscillator();
 
 		this.filter.type = "lowpass";
@@ -69,12 +103,13 @@ Voice.prototype.start = function(){
 		this.gain.gain.value = 0;
 		osc.connect(this.filter);
 		this.filter.connect(this.gain);
-		this.gain.connect(ctx.destination);
+		this.gain.connect(this.realGain);
+		this.realGain.connect(waveOsc1);
 
 		// this.gain.connect(synthDelay);
 
 		osc.start();
-		this.gain.gain.linearRampToValueAtTime(2, ctx.currentTime + parseFloat(this.envelope.a));
+		this.gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + parseFloat(this.envelope.a));
 		this.gain.gain.exponentialRampToValueAtTime(this.envelope.s, ctx.currentTime + parseFloat(this.envelope.d));
 
 		this.oscillators.push(osc);
@@ -86,7 +121,6 @@ Voice.prototype.start = function(){
 		this.gain.gain.setValueAtTime(this.gain.gain.value, ctx.currentTime); 
 		this.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + parseFloat(this.envelope.r));
 		var that = this;
-		console.log((this.envelope.r));
 		setTimeout(function(){
 		that.oscillators.forEach(function(oscillator, _) {
 
@@ -95,11 +129,19 @@ Voice.prototype.start = function(){
 		}, (this.envelope.r * 1000) + 400);
 		};
 
+		Voice.prototype.setGain = function(gain){
+		this.realGain.gain.value = gain;
+
+		}
+
 		Voice.prototype.setWave = function(wave){
 		this.waveform.real = new Float32Array(wave);
 		this.waveform.imag = new Float32Array(wave.length);
+
+			console.log(this.waveform);
+			that = this;
 		this.oscillators.forEach(function(osc,_){
-		osc.setPeriodicWave(this.waveform.real,this.waveform.imag);
+		osc.setPeriodicWave(ctx.createPeriodicWave(that.waveform.real, that.waveform.imag));
 		})
 		}
 
@@ -387,7 +429,165 @@ return Voice;
 // }
 // })
 
+$('#gain1').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+	for(var key in active_voices1){
+	voice = active_voices1[key];
+	voice.setGain($('#gain1').val());
+
+}
+
+}});
+
+$('#gain2').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+	for(var key in active_voices1){
+	voice = active_voices1[key];
+	voice.setGain($('#gain2').val());
+
+}
+
+}});
+
+
+$('#osc1').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+		current = arrayMorph(v,parseFloat($('#osc1').attr('data-max')),wfPresets);
+	for(var key in active_voices1){
+	voice = active_voices1[key];
+	voice.setWave(current);
+
+}
+
+}});
+
+$('#osc2').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+		current = arrayMorph(v,parseFloat($('#osc2').attr('data-max')),wfPresets);
+	for(var key in active_voices2){
+	voice = active_voices2[key];
+	voice.setWave(current);
+
+}
+
+}});
+
+$('#detune1').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+		steps = parseFloat($('#detune1').val());
+		cents = parseFloat($('#detuneFine1').val());
+
+	for(var key in active_voices1){
+	voice = active_voices1[key];
+voice.setDetune(steps + cents);
+}
+
+}});
+
+$('#detuneFine1').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+		steps = parseFloat($('#detune1').val());
+		cents = parseFloat($('#detuneFine1').val());
+
+	for(var key in active_voices1){
+	voice = active_voices1[key];
+voice.setDetune(steps + cents);
+}
+
+}});
+
+$('#detune2').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+		steps = parseFloat($('#detune2').val());
+		cents = parseFloat($('#detuneFine2').val());
+
+	for(var key in active_voices1){
+	voice = active_voices1[key];
+voice.setDetune(steps + cents);
+}
+
+}});
+
+$('#detuneFine2').knob({
+	angleOffset: -160,
+	angleArc: 320,
+	width: 50, 
+	height: 50,
+font: "VT323",
+bgColor: "#030",
+fgColor: "#CFC",
+
+	change: function(v){
+		steps = parseFloat($('#detune2').val());
+		cents = parseFloat($('#detuneFine2').val());
+
+	for(var key in active_voices1){
+	voice = active_voices1[key];
+voice.setDetune(steps + cents);
+}
+
+}});
+
+
 $('#cutoff1').knob({
+	angleOffset: -160,
+	angleArc: 320,
 	width: 50, 
 	height: 50,
 font: "VT323",
@@ -404,6 +604,8 @@ fgColor: "#CFC",
 }})
 
 $('#cutoff2').knob({
+	angleOffset: -160,
+	angleArc: 320,
 	width: 50, 
 	height: 50,
 font: "VT323",
@@ -420,6 +622,8 @@ fgColor: "#CFC",
 }});
 
 $('#res1').knob({
+	angleOffset: -160,
+	angleArc: 320,
 	width: 50, 
 	height: 50,
 font: "VT323",
@@ -435,6 +639,8 @@ fgColor: "#CFC",
 }});
 
 $('#res2').knob({
+	angleOffset: -160,
+	angleArc: 320,
 	width: 50, 
 	height: 50,
 font: "VT323",
@@ -467,24 +673,25 @@ var playNote = function(noteName,frequency){
 		s: $('#sustain1').val(),
 		r: $('#release1').val()
 	};
-
-	console.log(envelope);
-var voice1= new Voice(frequency, 
-	$('#osc1').val(),
+  steps = parseFloat($('#detune1').val());
+	cents = parseFloat($('#detuneFine1').val());
+wf = arrayMorph($('#osc1').val(),$('#osc1').attr('data-max'),wfPresets)
+console.log(wf)
+var voice1= new Voice($('#gain1').val(),frequency, 
+	wf,
 	logslider($('#cutoff1').val()),
 	$('#res1').val(),
-	0,
+	steps + cents,
 	envelope
 		);
 
-console.log(voice1);
 active_voices1[noteName] = voice1;
   voice1.start();
-  steps = parseFloat($('#detune').val());
-	cents = parseFloat($('#detuneFine').val());
-
-var voice2= new Voice(frequency, 
-	$('#osc1').val(),
+  steps = parseFloat($('#detune2').val());
+	cents = parseFloat($('#detuneFine2').val());
+	wf = arrayMorph($('#osc2').val(),$('#osc2').attr('data-max'),wfPresets);
+var voice2= new Voice($('#gain2').val(),frequency, 
+	wf,
 	logslider($('#cutoff1').val()),
 	$('#res1').val(),
 	steps + cents,
@@ -539,6 +746,34 @@ function logslider(position) {
   return Math.exp(minv + scale*(position-minp));
 }
 
+
+
+var arrayMorph = function(value, max, arrays) {
+	console.log(value,max,arrays)
+    current = [];
+    max = parseFloat(max);
+    //Get the number of arrays so we can divide the input value equally between them
+    numArrays = arrays.length;
+    // Get the current input value
+    // Get the input's max value
+    // Get the current input value as a spectrum between the values
+    absMorph = value / max * (numArrays - 1);
+    // This is the "hard" previous preset index
+    prev = Math.floor(absMorph);
+    // This is the "hard" next preset index
+    next = Math.ceil(absMorph);
+    // This is the decimal difference between the prev and next
+    diff = absMorph - prev;
+    prevArray = arrays[prev];
+    nextArray = arrays[next];
+    nextArray.forEach(function(v, i, a) {
+        thisDiff = nextArray[i] - prevArray[i];
+        thisVal = prevArray[i] + (thisDiff * diff);
+        if (!isFinite(thisVal)) thisVal = 0;
+        current.push(thisVal);
+    });
+    return current;
+}
 
 
 Number.prototype.map = function (in_min, in_max, out_min, out_max) {
