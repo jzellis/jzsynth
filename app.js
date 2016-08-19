@@ -18,7 +18,6 @@ function failure () {
 }
 
 function onMIDIMessage (message) {
-    console.log(message.data);
         var frequency = midiNoteToFrequency(message.data[1]);
 
 
@@ -63,22 +62,28 @@ gain2 = ctx.createGain(),
 filter1 = ctx.createBiquadFilter(),
 filter2 = ctx.createBiquadFilter(),
 delay = ctx.createDelay(),
+compressor = ctx.createDynamicsCompressor(),
 waveOsc1 = new WavyJones(ctx, 'waveform1'),
 active_voices1 = {},
 active_voices2 = {};
 lfo = ctx.createOscillator();
 lfoGain = ctx.createGain();
-lfoGain.gain.value= 600;
+lfoGain.gain.value= presets.init.lfoAmount;
 lfo.type = "sine";
-lfo.frequency.value = init.lfoFreq;
+lfo.frequency.value = presets.init.lfoFreq;
 mainGain.gain.value = 0.5;
 lfo.connect(lfoGain);
 
 waveOsc1.lineColor = "#0f0";
 waveOsc1.lineThickness = 1;
+compressor.threshold.value = -0.3;
+compressor.knee.value = 0.0; // brute force
+compressor.ratio.value = 20.0; // max compression
+compressor.attack.value = 0.005; // 5ms attack
+compressor.release.value = 0.050;
 mainGain.connect(waveOsc1);
-waveOsc1.connect(ctx.destination);
-
+waveOsc1.connect(compressor);
+compressor.connect(ctx.destination);
 
 noiseFormReal = [];
 for(i = 0; i < 16; i++){
@@ -113,8 +118,8 @@ var	keyboard = new QwertyHancock({
             });
 
 
-for(var key in init){
-	$('#' + key).val(init[key])
+for(var key in presets.init){
+	$('#' + key).val(presets.init[key])
 }
 
 var Waveform = (function(ctx){
@@ -199,7 +204,6 @@ Voice.prototype.start = function(){
 		this.waveform.real = new Float32Array(wave);
 		this.waveform.imag = new Float32Array(wave.length);
 
-			console.log(this.waveform);
 			that = this;
 		this.oscillators.forEach(function(osc,_){
 		osc.setPeriodicWave(ctx.createPeriodicWave(that.waveform.real, that.waveform.imag));
@@ -467,7 +471,6 @@ bgColor: "#030",
 fgColor: "#CFC",
 
 	change: function(v){
-		console.log(v);
 	lfo.frequency.value = parseFloat(v);
 
 }});
@@ -482,10 +485,22 @@ bgColor: "#030",
 fgColor: "#CFC",
 
 	change: function(v){
-		console.log(v);
 	lfoGain.gain.value = parseFloat(v);
 
 }});
+
+$('#showValues').on('click', function(){
+
+values = {}
+$('input').each(function(){
+
+values[$(this).attr('id')] = parseFloat($(this).val())
+
+})
+
+console.log(JSON.stringify(values));
+
+});
 
 
 
@@ -508,7 +523,6 @@ var playNote = function(noteName,frequency){
   steps = parseFloat($('#detune1').val());
 	cents = parseFloat($('#detuneFine1').val());
 wf = arrayMorph($('#osc1').val(),$('#osc1').attr('data-max'),wfPresets)
-console.log(wf)
 var voice1= new Voice($('#gain1').val(),frequency, 
 	wf,
 	logslider($('#cutoff1').val()),
@@ -581,7 +595,6 @@ function logslider(position) {
 
 
 var arrayMorph = function(value, max, arrays) {
-	console.log(value,max,arrays)
     current = [];
     max = parseFloat(max);
     //Get the number of arrays so we can divide the input value equally between them
